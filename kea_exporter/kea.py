@@ -58,16 +58,22 @@ class KeaSocket:
 
         if 'Dhcp4' in self.config:
             self.dhcp_version = DHCPVersion.DHCP4
-            subnets = self.config['Dhcp4']['subnet4']
+            subnet_type = 'subnet4'
+            subnets = self.config['Dhcp4']['subnet4'] if 'subnet4' in self.config['Dhcp4'] else None
+            shared_networks = self.config['Dhcp4']['shared-networks'] if 'shared-networks' in self.config['Dhcp4'] else None
         elif 'Dhcp6' in self.config:
             self.dhcp_version = DHCPVersion.DHCP6
-            subnets = self.config['Dhcp6']['subnet6']
+            subnet_type = 'subnet6'
+            subnets = self.config['Dhcp6']['subnet6'] if 'subnet6' in self.config['Dhcp6'] else None
+            shared_networks = self.config['Dhcp6']['shared-networks'] if 'shared-networks' in self.config['Dhcp6'] else None
         else:
             click.echo(f'Socket {self.sock_path} has no supported configuration', file=sys.stderr)
             sys.exit(1)
 
         # create subnet map
-        self.subnets = {subnet['id']: subnet for subnet in subnets}
+        self.subnets = {}
+        self.subnets |= {subnet['id']: subnet for subnet in subnets} if subnets != None else {}
+        self.subnets |= {subnet['id']: subnet for shared_network in shared_networks for subnet in shared_network[subnet_type]} if shared_networks != None else {}
 
 
 class KeaExporter:
